@@ -1,2 +1,2 @@
-from knnCMI import *
-from knnMI import *
+from .knnCMI import *
+from .knnMI import *
