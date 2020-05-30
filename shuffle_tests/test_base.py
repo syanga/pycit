@@ -3,9 +3,9 @@ import numpy as np
 
 class HypothesisTest:
     """
-    Base class for hypothesis testing.
-    Tracks test statistics, computes p-values.
-    Supports resampling data at each run.
+        Base class for hypothesis testing.
+        Tracks test statistics, computes p-values.
+        Supports resampling data at each run.
     """
     def __init__(self, test, test_args={}):
         self.test = test
