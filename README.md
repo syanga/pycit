@@ -1,7 +1,7 @@
 # pycit
 Framework for independence testing and conditional independence testing, with multiprocessing. Currently uses mutual information (MI) and conditional mutual information (CMI) as test statistics, estimated using k-NN methods. Also supports a routine for Markov blanket feature selection. Reports permutation-based p-values.
 
-# Available test statistics
+# Available Test Statistic Estimators
 ### Mutual Information Estimators
 * ```ksg_mi```: k-NN estimator for continuous data
 * ```bi_ksg_mi```: "bias-improved" k-NN estimator for continuous data
@@ -12,39 +12,39 @@ Framework for independence testing and conditional independence testing, with mu
 * ```bi_ksg_cmi```: "bias-improved" k-NN estimator for continuous data
 * ```mixed_cmi```: k-NN estimator for discrete-continuous mixtures
 
-### Other
-* ```kl_entropy```: k-NN differential entropy estimator
+Note: Also includes a differential entropy estimator: ```kl_entropy```.
 
 # Example Usage 
 
 ### Independence Testing
 ```python
-from test_statistics import *
-from shuffle_tests import *
+from pycit.estimators import ksg_mi
+from testers import IndependenceTest
+
+# Test whether or not x and y are independent
+tester = IndependenceTest(x_data, y_data, ksg_mi)
+pval = tester.test(num_shuffle_trials, n_jobs=1)
 ```
 
 ### Conditional Independence Testing
 ```python
-from test_statistics import *
-from shuffle_tests import *
+from pycit.estimators import ksg_cmi
+from testers import ConditionalIndependenceTest
+
+# Test whether or not x and y are conditionally independent given z
+tester = ConditionalIndependenceTest(x_data, y_data, z_data, ksg_mi)
+pval = tester.test(num_shuffle_trials, n_jobs=1)
 ```
 
 ### Markov Blanket Feature Selection
 ```python
-from test_statistics import *
-from shuffle_tests import *
+from pycit import markov_blanket
 ```
 
-### Differential Entropy Estimation
-```python
-from test_statistics import *
-```
-
-<!-- # Dependencies:
-* Numpy
-* Scipy
-* scikit learn
-* multiprocess -->
+# Dependencies:
+* ```numpy```
+* ```scipy```
+* ```scikit-learn```
 
 # References:
 * Frenzel, S. and Pompe, B. (2007). Partial mutual information for coupling analysis of multivariate time series. Physical Review Letters, 99(20):204101.

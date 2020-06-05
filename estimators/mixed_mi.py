@@ -12,6 +12,7 @@ def mixed_mi(x_data, y_data, k=5):
         x: data with shape (num_samples, x_dim) or (num_samples,)
         y: data with shape (num_samples, y_dim) or (num_samples,)
         k: number of nearest neighbors for estimation
+           * k recommended to be on the order of ~ num_samples/10 for independence testing 
     """
     assert x_data.shape[0] == y_data.shape[0]
     num_samples = x_data.shape[0]

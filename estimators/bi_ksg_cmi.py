@@ -13,6 +13,7 @@ def bi_ksg_cmi(x_data, y_data, z_data, k=5):
         y_data: data with shape (num_samples, y_dim) or (num_samples,)
         z_data: conditioning data with shape (num_samples, z_dim) or (num_samples,)
         k: number of nearest neighbors for estimation
+           * k recommended to be on the order of ~ num_samples/10 for independence testing
     """
     xzy_data = np.concatenate((x_data.reshape(-1, 1) if x_data.ndim == 1 else x_data,
                                z_data.reshape(-1, 1) if z_data.ndim == 1 else z_data,
