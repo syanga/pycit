@@ -29,7 +29,7 @@ def citest(x_data, y_data, z_data, statistic="mixed_cmi", statistic_args=None, t
     num_samples = x_data.shape[0]
 
     if statistic_args is None:
-        statistic_args = {'k': int(num_samples/20)}
+        statistic_args = {'k': max(1, int(num_samples/20))}
 
     if test_args is None:
         test_args = {
@@ -82,7 +82,7 @@ def itest(x_data, y_data, statistic="mixed_mi", statistic_args=None, test_args=N
     num_samples = x_data.shape[0]
 
     if statistic_args is None:
-        statistic_args = {'k': int(num_samples/20)}
+        statistic_args = {'k': max(1, int(num_samples/20))}
 
     if test_args is None:
         test_args = {
