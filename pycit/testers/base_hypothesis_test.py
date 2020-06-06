@@ -41,7 +41,9 @@ class HypothesisTest:
                 * self.bootstrap_nominal_statistics
         """
         pool = Pool(processes=n_jobs)
-        results = list(pool.map_async(partial(HypothesisTest.bootstrap_trial, hypothesis_test=self, bootstrap_size=bootstrap_size), range(n_trials)).get())
+        results = list(pool.map_async(partial( \
+            HypothesisTest.bootstrap_trial, hypothesis_test=self, \
+            bootstrap_size=bootstrap_size), range(n_trials)).get())
         pool.close()
         pool.join()
 

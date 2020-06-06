@@ -18,27 +18,25 @@ Note: Also includes a differential entropy estimator: ```kl_entropy```.
 
 ### Independence Testing
 ```python
-from pycit.estimators import ksg_mi
-from testers import IndependenceTest
+from pycit import itest
 
 # Test whether or not x and y are independent
-tester = IndependenceTest(x_data, y_data, ksg_mi)
-pval = tester.test(num_shuffle_trials, n_jobs=1)
+pval = itest(x, y, test_args={'n_jobs': 2})
+is_independent = (pval >= 1.- confidence_level)
 ```
 
 ### Conditional Independence Testing
 ```python
-from pycit.estimators import ksg_cmi
-from testers import ConditionalIndependenceTest
+from pycit import citest
 
 # Test whether or not x and y are conditionally independent given z
-tester = ConditionalIndependenceTest(x_data, y_data, z_data, ksg_mi)
-pval = tester.test(num_shuffle_trials, n_jobs=1)
+pval = citest(x_data, y_data, z_data, test_args={'n_jobs': 2})
+is_conditionally_independent = (pval >= 1.- confidence_level)
 ```
 
 ### Markov Blanket Feature Selection
 ```python
-from pycit import markov_blanket
+from pycit.markov_blanket import MarkovBlanket
 ```
 
 # Dependencies:
