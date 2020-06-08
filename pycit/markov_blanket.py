@@ -1,6 +1,7 @@
 """ Markov Blanket feature selection """
 from itertools import combinations
 import numpy as np
+from .ci_test import itest, citest
 
 
 class MarkovBlanket:
@@ -14,13 +15,15 @@ class MarkovBlanket:
                   If None, defaults to 'X_{1}',...,'X_{m}'
         cit_funcs: dictionary requiring the following keys:
         {
-            'it': independence test function that takes data and returns a pvalue,
+            'it': independence test function that takes data and returns a pvalue
+                # defaults to itest()
             'it_args': dictionary of additional arguments for it()
             'cit': conditional independence test function that takes data and returns a pvalue,
+                # defaults to citest()
             'cit_args': dictionary of additional arguments for cit()
         }
     """
-    def __init__(self, x_data, y_data, cit_funcs, x_labels=None):
+    def __init__(self, x_data, y_data, cit_funcs=None, x_labels=None):
         assert x_data.shape[0] == y_data.shape[0]
         assert x_data.ndim == 3
         self.num_samples = x_data.shape[0]
@@ -30,16 +33,51 @@ class MarkovBlanket:
             assert len(x_labels) == self.num_features
             self.x_labels = x_labels
         else:
-            self.x_labels = ['X_{%d}'%i for i in range(self.num_features)]
+            self.x_labels = ['X_{%d}'%(i+1) for i in range(self.num_features)]
 
         self.x_data = x_data
         self.y_data = y_data
 
-        assert 'it' in cit_funcs
-        assert 'it_args' in cit_funcs
-        assert 'cit' in cit_funcs
-        assert 'cit_args' in cit_funcs
-        self.cit_funcs = cit_funcs
+        default_cit_funcs = {
+            'it': itest,
+            'it_args': {},
+            'cit': citest,
+            'cit_args': {}
+        }
+
+        if cit_funcs is None:
+            self.cit_funcs = default_cit_funcs
+
+        else:
+            # populate missing fields with defaults
+            self.cit_funcs = cit_funcs
+            for key in default_cit_funcs:
+                if key not in self.cit_funcs:
+                    self.cit_funcs[key] = default_cit_funcs[key]
+
+    def find_markov_blanket(self, max_conditioning=None, confidence=0.95, verbose=False):
+        """
+            Finds the adjacents, then adds coparents
+            * max_conditioning: maximum conditioning set size
+            * confidence level for CI testing
+            * verbose: print results of CI tests
+        """
+        if verbose:
+            print("==========Finding Adjacents...==========")
+
+        adjacents = self.find_adjacents(max_conditioning, confidence, verbose)
+
+        if verbose:
+            print("Adjacents found: %s"%str([self.x_labels[k] for k in adjacents]))
+            print("==========Finding Coparents...==========")
+
+        coparents = self.find_coparents(adjacents, confidence, verbose)
+        markov_blanket = sorted(adjacents+coparents)
+
+        if verbose:
+            print("Discovered Markov blanket: %s"%str([self.x_labels[k] for k in markov_blanket]))
+
+        return markov_blanket
 
     def test_feature(self, feature, conditioning_set):
         """
@@ -50,21 +88,26 @@ class MarkovBlanket:
         """
         if len(conditioning_set) == 0:
             # independence test
-            pval = self.cit_funcs['it'](self.x_data[:, :, feature],
-                                        self.y_data,
-                                        **self.cit_funcs['it_args'])
+            pval = self.cit_funcs['it'](
+                self.x_data[:, :, feature],
+                self.y_data,
+                **self.cit_funcs['it_args'])
         else:
             # conditional independence test
-            pval = self.cit_funcs['cit'](self.x_data[:, :, feature],
-                                         self.y_data,
-                                         self.x_data[:, :, conditioning_set].reshape(-1, 1),
-                                         **self.cit_funcs['cit_args'])
+            pval = self.cit_funcs['cit'](
+                self.x_data[:, :, feature],
+                self.y_data,
+                self.x_data[:, :, conditioning_set].reshape(self.num_samples, -1),
+                **self.cit_funcs['cit_args'])
 
         return pval
 
-    def find_adjacents(self, confidence=0.95, max_conditioning=None, verbose=False):
+    def find_adjacents(self, max_conditioning=None, confidence=0.95, verbose=False):
         """
-            Find parents and children of Y
+            Find parents and children of target variable Y
+            * max_conditioning: maximum conditioning set size
+            * confidence level for CI testing
+            * verbose: print results of CI tests
         """
         if max_conditioning is None:
             # default to largest possible conditioning set size
@@ -80,21 +123,21 @@ class MarkovBlanket:
             while adj_idx < len(adjacents):
                 # identify feature being tested and possible conditioning features
                 curr_feature = adjacents[adj_idx]
-                conditioning_candidates = [j for j in adjacents if j != adj_idx]
+                conditioning_candidates = [j for j in adjacents if j != curr_feature]
 
                 if verbose:
-                    print("==========Testing %s=========="%self.x_labels[curr_feature])
+                    print("Testing %s"%self.x_labels[curr_feature])
 
                 # try all possible conditioning sets of size conditioning_size
                 for conditioning_set in combinations(conditioning_candidates, conditioning_size):
                     if verbose:
-                        print("\tCond. set:%s"%str([self.x_labels[k] for k in conditioning_set]))
+                        print("  Cond. set: %s"%str([self.x_labels[k] for k in conditioning_set]))
 
                     # conditioning_set is a tuple, sorted(conditioning_set) is a list
                     pval = self.test_feature(curr_feature, sorted(conditioning_set))
 
                     if verbose:
-                        print("\t\t Is CI:%r, pval:%0.3f"%(pval >= 1.- confidence, pval))
+                        print("    Is CI: %r, pval: %0.3f"%(pval >= 1.- confidence, pval))
 
                     if pval >= 1.- confidence:
                         # remove feature if it is CI of Y
@@ -109,25 +152,25 @@ class MarkovBlanket:
 
     def find_coparents(self, adjacents, confidence=0.95, verbose=False):
         """
-            Find co-parents of Y, given adjacents
-
-            If feature i is not CI given adjacents, add to list of coparents
-            The Markov blanket is the union of adjacents and coparents
+            Find co-parents of Y, given adjacents. If feature i is not
+            CI given adjacents, add to list of coparents
+            * adjacents: list of adjacent features
+            * confidence level for CI testing
+            * verbose: print results of CI tests
         """
         markov_blanket = adjacents.copy()
         coparents = []
-        for i in range(self.num_features):
-            if i in adjacents:
-                continue
-
+        for i in [j for j in range(self.num_features) if j not in adjacents]:
             markov_blanket = sorted(markov_blanket)
+
+            if verbose:
+                print("Testing %s"%self.x_labels[i])
+
             pval = self.test_feature(i, markov_blanket)
             is_dependent = bool(pval < 1.-confidence)
 
             if verbose:
-                result = '!CI' if is_dependent else 'CI'
-                cond_set_str = str([self.x_labels[k] for k in markov_blanket])
-                print("Y%s%s|%s,p-val:%0.2f"%(self.x_labels[i], result, cond_set_str, pval))
+                print("    Is dependent: %r, pval: %0.3f"%(is_dependent, pval))
 
             if is_dependent:
                 markov_blanket.append(i)

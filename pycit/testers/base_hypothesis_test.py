@@ -40,12 +40,17 @@ class HypothesisTest:
                 * self.bootstrap_shuffled_statistics
                 * self.bootstrap_nominal_statistics
         """
-        pool = Pool(processes=n_jobs)
-        results = list(pool.map_async(partial( \
-            HypothesisTest.bootstrap_trial, hypothesis_test=self, \
-            bootstrap_size=bootstrap_size), range(n_trials)).get())
-        pool.close()
-        pool.join()
+        if n_jobs > 1:
+            pool = Pool(processes=n_jobs)
+            results = list(pool.map_async(partial( \
+                HypothesisTest.bootstrap_trial, hypothesis_test=self, \
+                bootstrap_size=bootstrap_size), range(n_trials)).get())
+            pool.close()
+            pool.join()
+        else:
+            results = list(map(partial( \
+                HypothesisTest.bootstrap_trial, hypothesis_test=self, \
+                bootstrap_size=bootstrap_size), range(n_trials)))
 
         self.shuffled_statistics = [r[1] for r in results]
 

@@ -24,7 +24,7 @@ class ConditionalIndependenceTest(HypothesisTest):
         Based on: http://proceedings.mlr.press/v84/runge18a.html
     """
     # pylint: disable=too-many-instance-attributes
-    def __init__(self, x_data, y_data, z_data, statistic, statistic_args=None, k_perm=5):
+    def __init__(self, x_data, y_data, z_data, statistic, statistic_args=None, k_perm=10):
         # pylint: disable=too-many-arguments
         super().__init__(statistic, statistic_args=statistic_args)
         assert x_data.shape[0] == y_data.shape[0] == z_data.shape[0]
@@ -65,13 +65,12 @@ class ConditionalIndependenceTest(HypothesisTest):
         perm = np.random.permutation(self.total_samples)
         idx = np.zeros(self.total_samples, dtype='i')
         for i in perm:
-            temp = i
-            for j in range(self.k_perm):
-                temp = self.nn_lists[i][j]
-                if temp not in used_idx:
-                    break
-            idx[i] = temp
-            used_idx.append(temp)
+            # look for nearest unused neighbor of i-th sample in z space
+            # if none found, use the k_perm-nearest neighbor
+            nearest_idx = ([j for j in self.nn_lists[i] if j not in used_idx] \
+                           +[self.nn_lists[i][-1]])[0]
+            idx[i] = nearest_idx
+            used_idx.append(nearest_idx)
 
         return idx
 
@@ -92,16 +91,15 @@ class ConditionalIndependenceTest(HypothesisTest):
         perm = np.random.permutation(bootstrap_size)
         idx2 = np.zeros(bootstrap_size, dtype='i')
         for i in perm:
-            temp = i
-            for j in range(self.k_perm):
-                temp = nn_lists[i][j]
-                if temp not in used_idx:
-                    break
+            # look for nearest unused neighbor of i-th sample in z space
+            # if none found, use the k_perm-nearest neighbor
+            nearest_idx = ([j for j in nn_lists[i] if j not in used_idx] \
+                           +[nn_lists[i][-1]])[0]
 
             # index into idx1
-            temp = idx1[temp]
-            idx2[i] = temp
-            used_idx.append(temp)
+            permuted_idx = idx1[nearest_idx]
+            idx2[i] = permuted_idx
+            used_idx.append(permuted_idx)
 
         # return bootstrap indices, shuffled bootstrap indices
         return idx1, idx2
