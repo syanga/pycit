@@ -5,6 +5,8 @@
 """
 from multiprocessing import Pool
 from functools import partial
+import numpy as np
+import os
 
 
 class HypothesisTest:
@@ -71,6 +73,8 @@ class HypothesisTest:
             * run_id: (integer) identifier of current trial
             * hypothesis_test: HypothesisTest object with which to compute test statistic
         """
+        # reseed so that shuffling works correctly with multiprocessing
+        np.random.seed(int.from_bytes(os.urandom(4), byteorder='little'))
         shuffled_statistic, nominal_statistic = hypothesis_test.bootstrap_instance(bootstrap_size)
         return (run_id, shuffled_statistic, nominal_statistic)
 

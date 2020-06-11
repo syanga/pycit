@@ -55,7 +55,8 @@ class MarkovBlanket:
                 if key not in self.cit_funcs:
                     self.cit_funcs[key] = default_cit_funcs[key]
 
-    def find_markov_blanket(self, max_conditioning=None, confidence=0.95, verbose=False):
+    def find_markov_blanket(self, min_conditioning=0, max_conditioning=None,
+                            confidence=0.95, verbose=False):
         """
             Finds the adjacents, then adds coparents
             * max_conditioning: maximum conditioning set size
@@ -65,7 +66,7 @@ class MarkovBlanket:
         if verbose:
             print("==========Finding Adjacents...==========")
 
-        adjacents = self.find_adjacents(max_conditioning, confidence, verbose)
+        adjacents = self.find_adjacents(min_conditioning, max_conditioning, confidence, verbose)
 
         if verbose:
             print("Adjacents found: %s"%str([self.x_labels[k] for k in adjacents]))
@@ -102,7 +103,8 @@ class MarkovBlanket:
 
         return pval
 
-    def find_adjacents(self, max_conditioning=None, confidence=0.95, verbose=False):
+    def find_adjacents(self, min_conditioning=0, max_conditioning=None,
+                       confidence=0.95, verbose=False):
         """
             Find parents and children of target variable Y
             * max_conditioning: maximum conditioning set size
@@ -117,7 +119,7 @@ class MarkovBlanket:
         adjacents = np.random.permutation(self.num_features).tolist()
 
         # increase conditioning set size from 0
-        for conditioning_size in range(max_conditioning+1):
+        for conditioning_size in range(min_conditioning, max_conditioning+1):
             # loop through each not-yet eliminated feature
             adj_idx = 0
             while adj_idx < len(adjacents):
@@ -129,12 +131,14 @@ class MarkovBlanket:
                     print("Testing %s"%self.x_labels[curr_feature])
 
                 # try all possible conditioning sets of size conditioning_size
-                for conditioning_set in combinations(conditioning_candidates, conditioning_size):
+                sets = [sorted(c) for c in combinations(conditioning_candidates, conditioning_size)]
+                np.random.shuffle(sets)
+                for conditioning_set in sets:
                     if verbose:
                         print("  Cond. set: %s"%str([self.x_labels[k] for k in conditioning_set]))
 
                     # conditioning_set is a tuple, sorted(conditioning_set) is a list
-                    pval = self.test_feature(curr_feature, sorted(conditioning_set))
+                    pval = self.test_feature(curr_feature, conditioning_set)
 
                     if verbose:
                         print("    Is CI: %r, pval: %0.3f"%(pval >= 1.- confidence, pval))
@@ -176,4 +180,4 @@ class MarkovBlanket:
                 markov_blanket.append(i)
                 coparents.append(i)
 
-        return sorted(coparents)
+        return coparents

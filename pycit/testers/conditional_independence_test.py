@@ -24,18 +24,18 @@ class ConditionalIndependenceTest(HypothesisTest):
         Based on: http://proceedings.mlr.press/v84/runge18a.html
     """
     # pylint: disable=too-many-instance-attributes
-    def __init__(self, x_data, y_data, z_data, statistic, statistic_args=None, k_perm=10):
+    def __init__(self, x_data, y_data, z_data, statistic, statistic_args=None, k_perm=5):
         # pylint: disable=too-many-arguments
         super().__init__(statistic, statistic_args=statistic_args)
         assert x_data.shape[0] == y_data.shape[0] == z_data.shape[0]
         self.total_samples = x_data.shape[0]
 
         # flatten extra dimensions of x and y
-        self.x_data = x_data.reshape(x_data.shape[0], -1)
-        self.y_data = y_data.reshape(y_data.shape[0], -1)
-        self.z_data = z_data.reshape(z_data.shape[0], -1)
+        self.x_data = x_data.reshape(self.total_samples, -1)
+        self.y_data = y_data.reshape(self.total_samples, -1)
+        self.z_data = z_data.reshape(self.total_samples, -1)
 
-        # setup nearest-neighbor search for z (max-norm) initially for batch mode
+        # setup nearest-neighbor search for z
         self.k_perm = k_perm
         self.lookup_z = NearestNeighbors(metric='chebyshev')
 

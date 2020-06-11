@@ -30,9 +30,9 @@ def mixed_mi(x_data, y_data, k=5):
     # modification for discrete-continuous
     k_list = k*np.ones(radius.shape, dtype='i')
     where_zero = np.array(radius == 0.0, dtype='?')
-    if np.sum(where_zero) > 0:
+    if np.any(where_zero > 0):
         matches = lookup.radius_neighbors(x_y[where_zero], radius=0.0, return_distance=False)
-        k_list[where_zero] = np.fromiter(map(len, matches), dtype='i')
+        k_list[where_zero] = np.array([i.size for i in matches])
 
     # estimate entropies
     lookup.fit(x_data.reshape(-1, 1) if x_data.ndim == 1 else x_data)

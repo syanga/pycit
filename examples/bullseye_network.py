@@ -19,26 +19,26 @@ def bullseye_network(num_samples, dim, eps=0.075):
 
     r_data = np.zeros((num_samples, 6))
 
-    # r4
-    r_data[:, 3] = sample_radius(num_samples)
+    # r1
+    r_data[:, 0] = sample_radius(num_samples)
 
-    # r4->r2
-    r_data[:, 1] = r_data[:, 3] + sample_noise(num_samples, eps)
+    # r1->r2
+    r_data[:, 1] = r_data[:, 0] + sample_noise(num_samples, eps)
 
-    # r4->r1
-    r_data[:, 0] = r_data[:, 3] + sample_noise(num_samples, eps)
+    # r1->r3
+    r_data[:, 2] = r_data[:, 0] + sample_noise(num_samples, eps)
 
-    # r1->r5
-    r_data[:, 4] = r_data[:, 0] + sample_noise(num_samples, eps)
+    # r3->r4
+    r_data[:, 3] = r_data[:, 2] + sample_noise(num_samples, eps)
 
-    # r5->r6<-r2
-    r_data[:, 5] = 0.5*r_data[:, 1] + 0.5*r_data[:, 4] + sample_noise(num_samples, eps)
+    # r4->r5<-r2
+    r_data[:, 4] = 0.5*r_data[:, 1] + 0.5*r_data[:, 3] + sample_noise(num_samples, eps)
 
-    # r1->Y<-r6
-    y_data = 0.5*r_data[:, 0] + 0.5*r_data[:, 5] + sample_noise(num_samples, eps)
+    # r3->y<-r5
+    y_data = 0.5*r_data[:, 2] + 0.5*r_data[:, 4] + sample_noise(num_samples, eps)
 
-    # Y->r3<-r5
-    r_data[:, 2] = 0.5*r_data[:, 4] + 0.5*y_data + sample_noise(num_samples, eps)
+    # y->r6<-r4
+    r_data[:, 5] = 0.5*r_data[:, 3] + 0.5*y_data + sample_noise(num_samples, 0.025)
 
     # generate X values from R values
     x_data = np.random.normal(0, 1, size=(num_samples, dim, 6))
