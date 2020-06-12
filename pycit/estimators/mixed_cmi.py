@@ -21,7 +21,7 @@ def mixed_cmi(x_data, y_data, z_data, k=5):
                                z_data.reshape(-1, 1) if z_data.ndim == 1 else z_data,
                                y_data.reshape(-1, 1) if y_data.ndim == 1 else y_data), axis=1)
 
-    lookup = NearestNeighbors(metric='chebyshev', algorithm='auto')
+    lookup = NearestNeighbors(metric='chebyshev')
     lookup.fit(xzy_data)
 
     radius = lookup.kneighbors(n_neighbors=k, return_distance=True)[0]

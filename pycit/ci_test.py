@@ -16,28 +16,28 @@ def citest(x_data, y_data, z_data, statistic="mixed_cmi", statistic_args=None, t
         statistic_args: dictionary of additional args for statistic
             default:
             {
-                'k': num_samples/100     # k for knn method
+                'k': 5                  # k for knn method
             }
         test_args: dictionary of additional args for cit
             default:
             {
-                'k_perm': 5,            # permutation nearest neigbhors
+                'k_perm': 10,            # permutation nearest neigbhors
                 'n_trials': 1000,       # number of trials for estimating p-value
-                'bootstrap_size': None, # not bootstrapped dataset
+                'subsample_size': None, # not subsampleped dataset
                 'n_jobs': 1             # number of parallel processes for ci testing
             }
     """
     # pylint: disable=too-many-arguments
     assert x_data.shape[0] == y_data.shape[0] == z_data.shape[0]
-    num_samples = x_data.shape[0]
+    # num_samples = x_data.shape[0]
 
     if statistic_args is None:
-        statistic_args = {'k': max(1, int(num_samples/100))}
+        statistic_args = {'k': 5}
 
     default_test_args = {
-        'k_perm': 5,
+        'k_perm': 10,
         'n_trials': 1000,
-        'bootstrap_size': None,
+        'subsample_size': None,
         'n_jobs': 1
     }
 
@@ -54,7 +54,7 @@ def citest(x_data, y_data, z_data, statistic="mixed_cmi", statistic_args=None, t
         getattr(estimators, statistic), statistic_args=statistic_args, k_perm=test_args['k_perm'])
 
     pval = tester.test(test_args['n_trials'], \
-        bootstrap_size=test_args['bootstrap_size'], n_jobs=test_args['n_jobs'])
+        subsample_size=test_args['subsample_size'], n_jobs=test_args['n_jobs'])
 
     del tester
     return pval
@@ -72,25 +72,25 @@ def itest(x_data, y_data, statistic="mixed_mi", statistic_args=None, test_args=N
         statistic_args: dictionary of additional args for statistic
             default:
             {
-                'k': num_samples/100     # k for knn method
+                'k': 5                  # k for knn method
             }
         test_args: dictionary of additional args for cit
             default:
             {
                 'n_trials': 1000,       # number of trials for estimating p-value
-                'bootstrap_size': None, # not bootstrapped dataset
+                'subsample_size': None, # not subsampleped dataset
                 'n_jobs': 1             # number of parallel processes for ci testing
             }
     """
     assert x_data.shape[0] == y_data.shape[0]
-    num_samples = x_data.shape[0]
+    # num_samples = x_data.shape[0]
 
     if statistic_args is None:
-        statistic_args = {'k': max(1, int(num_samples/100))}
+        statistic_args = {'k': 5}
 
     default_test_args = {
         'n_trials': 1000,
-        'bootstrap_size': None,
+        'subsample_size': None,
         'n_jobs': 1
     }
 
@@ -107,7 +107,7 @@ def itest(x_data, y_data, statistic="mixed_mi", statistic_args=None, test_args=N
         getattr(estimators, statistic), statistic_args=statistic_args)
 
     pval = tester.test(test_args['n_trials'], \
-        bootstrap_size=test_args['bootstrap_size'], n_jobs=test_args['n_jobs'])
+        subsample_size=test_args['subsample_size'], n_jobs=test_args['n_jobs'])
 
     del tester
     return pval

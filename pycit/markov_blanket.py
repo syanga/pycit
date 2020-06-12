@@ -152,7 +152,7 @@ class MarkovBlanket:
                     # increment if feature adjacents[adj_idx] was not eliminated
                     adj_idx += 1
 
-        return adjacents
+        return sorted(adjacents)
 
     def find_coparents(self, adjacents, confidence=0.95, verbose=False):
         """
@@ -164,7 +164,9 @@ class MarkovBlanket:
         """
         markov_blanket = adjacents.copy()
         coparents = []
-        for i in [j for j in range(self.num_features) if j not in adjacents]:
+        non_adjacents = [j for j in range(self.num_features) if j not in adjacents]
+        np.random.shuffle(non_adjacents)
+        for i in non_adjacents:
             markov_blanket = sorted(markov_blanket)
 
             if verbose:
@@ -180,4 +182,4 @@ class MarkovBlanket:
                 markov_blanket.append(i)
                 coparents.append(i)
 
-        return coparents
+        return sorted(coparents)

@@ -5,8 +5,8 @@
 """
 from multiprocessing import Pool
 from functools import partial
-import numpy as np
 import os
+import numpy as np
 
 
 class HypothesisTest:
@@ -15,7 +15,7 @@ class HypothesisTest:
         null distribution for the test statistic by shuffling the data
 
         batch_test: returns a p-value for test using all of the data
-        bootstrap_test: returns a p-value for test using bootstrapped samples
+        subsample_test: returns a p-value for test using subsampleped samples
 
         p-value: estimated probability of null hypothesis being true
 
@@ -30,61 +30,61 @@ class HypothesisTest:
         self.shuffled_statistics = None
         self.nominal_statistics = None
 
-    def test(self, n_trials, bootstrap_size=None, n_jobs=1):
+    def test(self, n_trials, subsample_size=None, n_jobs=1):
         """
             Perform hypothesis test
             * n_trials: number of times to shuffle data and recompute test statistic
-            * bootstrap_size: if not None, compute test statistics using
-              bootstrap resampled data of size bootstrap_size
+            * subsample_size: if not None, compute test statistics using
+              subsample resampled data of size subsample_size
             * n_jobs: number of shuffle instances to run in parallel
 
             computed test statistics can be accessed using:
-                * self.bootstrap_shuffled_statistics
-                * self.bootstrap_nominal_statistics
+                * self.subsample_shuffled_statistics
+                * self.subsample_nominal_statistics
         """
         if n_jobs > 1:
             pool = Pool(processes=n_jobs)
             results = list(pool.map_async(partial( \
-                HypothesisTest.bootstrap_trial, hypothesis_test=self, \
-                bootstrap_size=bootstrap_size), range(n_trials)).get())
+                HypothesisTest.subsample_trial, hypothesis_test=self, \
+                subsample_size=subsample_size), range(n_trials)).get())
             pool.close()
             pool.join()
         else:
             results = list(map(partial( \
-                HypothesisTest.bootstrap_trial, hypothesis_test=self, \
-                bootstrap_size=bootstrap_size), range(n_trials)))
+                HypothesisTest.subsample_trial, hypothesis_test=self, \
+                subsample_size=subsample_size), range(n_trials)))
 
         self.shuffled_statistics = [r[1] for r in results]
 
-        if bootstrap_size is None:
+        if subsample_size is None:
             # batch mode, single nominal value
-            nominal_statistic = self.bootstrap_instance(bootstrap_size=None, shuffle=False)[1]
+            nominal_statistic = self.subsample_instance(subsample_size=None, shuffle=False)[1]
             self.nominal_statistics = [nominal_statistic for _ in range(n_trials)]
         else:
-            # bootstrap mode
+            # subsample mode
             self.nominal_statistics = [r[2] for r in results]
 
         return self.pvalue(self.shuffled_statistics, self.nominal_statistics)
 
     @staticmethod
-    def bootstrap_trial(run_id, hypothesis_test, bootstrap_size=None):
+    def subsample_trial(run_id, hypothesis_test, subsample_size=None):
         """
-            Wrapper method of bootstrap_instance to enable multiprocessing
+            Wrapper method of subsample_instance to enable multiprocessing
             * run_id: (integer) identifier of current trial
             * hypothesis_test: HypothesisTest object with which to compute test statistic
         """
         # reseed so that shuffling works correctly with multiprocessing
         np.random.seed(int.from_bytes(os.urandom(4), byteorder='little'))
-        shuffled_statistic, nominal_statistic = hypothesis_test.bootstrap_instance(bootstrap_size)
+        shuffled_statistic, nominal_statistic = hypothesis_test.subsample_instance(subsample_size)
         return (run_id, shuffled_statistic, nominal_statistic)
 
     @staticmethod
     def pvalue(shuffled_statistics, nominal_statistics):
         """
-            Compute p-value for a bootstrapped test
+            Compute p-value for a subsampleped test
             * test_results is a list of tuples:
-            * shuffled_statistics: computed test statistic using shuffled bootstrap sample
-            * nominal_statistics: computed test statistic using unshuffled bootstrap sample
+            * shuffled_statistics: computed test statistic using shuffled subsample sample
+            * nominal_statistics: computed test statistic using unshuffled subsample sample
         """
         assert len(shuffled_statistics) > 0
         assert len(shuffled_statistics) == len(nominal_statistics)
@@ -100,14 +100,14 @@ class HypothesisTest:
         """
         return self.statistic(*data, **self.statistic_args)
 
-    def bootstrap_instance(self, bootstrap_size=None, shuffle=True):
+    def subsample_instance(self, subsample_size=None, shuffle=True):
         """ Compute test statistic using shuffled data
             returns tuple: (shuffled_statistic, nominal_statistic)
-                * shuffled_statistic: computed using shuffled bootstrapped dataset
-                * nominal_statistic: computed using unshuffled bootstrapped dataset
+                * shuffled_statistic: computed using shuffled subsampleped dataset
+                * nominal_statistic: computed using unshuffled subsampleped dataset
 
-            * bootstrap_size: if None, return None for nominal_statistic.
-                Otherwise, statistics using bootstrap resample of dataset
+            * subsample_size: if None, return None for nominal_statistic.
+                Otherwise, statistics using subsample resample of dataset
             * shuffle: if True, perform shuffling for p-value estimation.
                 Set to False to compute batch nominal statistic.
                 In this case, the returned shuffle_stat will be None

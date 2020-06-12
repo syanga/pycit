@@ -24,7 +24,7 @@ class ConditionalIndependenceTest(HypothesisTest):
         Based on: http://proceedings.mlr.press/v84/runge18a.html
     """
     # pylint: disable=too-many-instance-attributes
-    def __init__(self, x_data, y_data, z_data, statistic, statistic_args=None, k_perm=5):
+    def __init__(self, x_data, y_data, z_data, statistic, statistic_args=None, k_perm=10):
         # pylint: disable=too-many-arguments
         super().__init__(statistic, statistic_args=statistic_args)
         assert x_data.shape[0] == y_data.shape[0] == z_data.shape[0]
@@ -61,64 +61,75 @@ class ConditionalIndependenceTest(HypothesisTest):
             # initialize nearest neighbor lists
             self._initialize_batch()
 
-        used_idx = []
-        perm = np.random.permutation(self.total_samples)
+        used_idx = set()
         idx = np.zeros(self.total_samples, dtype='i')
-        for i in perm:
+        for i in np.random.permutation(self.total_samples):
             # look for nearest unused neighbor of i-th sample in z space
-            # if none found, use the k_perm-nearest neighbor
-            nearest_idx = ([j for j in self.nn_lists[i] if j not in used_idx] \
-                           +[self.nn_lists[i][-1]])[0]
-            idx[i] = nearest_idx
-            used_idx.append(nearest_idx)
+            permuted = -1
+            for j in range(self.k_perm):
+                idx_j = self.nn_lists[i][j]
+                if idx_j not in used_idx:
+                    permuted = idx_j
+                    idx[i] = permuted
+                    used_idx.add(permuted)
+                    break
+
+            # if none found, randomly choose on the the k_perm-nearest neighbors
+            if permuted == -1:
+                permuted = self.nn_lists[i][np.random.choice(self.k_perm)]
+                idx[i] = permuted
 
         return idx
 
-    def _bootstrap_permute(self, bootstrap_size):
+    def _subsample_permute(self, subsample_size):
         """
-            Generate bootstrap permutation of y_data by locally shuffling
+            Generate subsample permutation of y_data by locally shuffling
             with k_perm nearest-neighbors of z-samples.
         """
-        # bootstrap subsample of dataset
-        idx1 = np.random.choice(self.total_samples, bootstrap_size, replace=True)
+        # subsample subsample of dataset
+        idx1 = np.sort(np.random.choice(self.total_samples, subsample_size, replace=False))
 
         # create nearest neighbor lists for this instance
         self.lookup_z.fit(self.z_data[idx1])
         nn_lists = self.lookup_z.kneighbors(n_neighbors=self.k_perm, return_distance=False)
 
         # generate y permutation
-        used_idx = []
-        perm = np.random.permutation(bootstrap_size)
-        idx2 = np.zeros(bootstrap_size, dtype='i')
-        for i in perm:
-            # look for nearest unused neighbor of i-th sample in z space
-            # if none found, use the k_perm-nearest neighbor
-            nearest_idx = ([j for j in nn_lists[i] if j not in used_idx] \
-                           +[nn_lists[i][-1]])[0]
+        used_idx = set()
+        idx2 = np.zeros(subsample_size, dtype='i')
+        for i in np.random.permutation(subsample_size):
+            # pick a nearest unused neighbor of i-th sample in z space
+            # if none found, randomly choose on the the k_perm-nearest neighbors
+            permuted = -1
+            for j in range(self.k_perm):
+                idx_j = nn_lists[i][j]
+                if idx_j not in used_idx:
+                    permuted = idx_j
+                    break
 
-            # index into idx1
-            permuted_idx = idx1[nearest_idx]
-            idx2[i] = permuted_idx
-            used_idx.append(permuted_idx)
+            if permuted == -1:
+                permuted = nn_lists[i][np.random.choice(self.k_perm)]
 
-        # return bootstrap indices, shuffled bootstrap indices
+            idx2[i] = idx1[permuted]
+            used_idx.add(permuted)
+
+        # return subsample indices, shuffled subsample indices
         return idx1, idx2
 
-    def bootstrap_instance(self, bootstrap_size=None, shuffle=True):
+    def subsample_instance(self, subsample_size=None, shuffle=True):
         """ Compute test statistic using shuffled data
             returns tuple: (shuffled_statistic, nominal_statistic)
-                * shuffled_statistic: computed using shuffled bootstrapped dataset
-                * nominal_statistic: computed using unshuffled bootstrapped dataset
+                * shuffled_statistic: computed using shuffled subsampleped dataset
+                * nominal_statistic: computed using unshuffled subsampleped dataset
 
-            * bootstrap_size: if None, return None for nominal_statistic.
-                Otherwise, statistics using bootstrap resample of dataset
+            * subsample_size: if None, return None for nominal_statistic.
+                Otherwise, statistics using subsample resample of dataset
             * shuffle: if True, perform shuffling for p-value estimation.
                 Set to False to compute batch nominal statistic.
                 In this case, the returned shuffle_stat will be None
         """
-        if bootstrap_size is not None:
-            # use bootstrap subsample of dataset
-            idx1, idx2 = self._bootstrap_permute(bootstrap_size)
+        if subsample_size is not None:
+            # use subsample subsample of dataset
+            idx1, idx2 = self._subsample_permute(subsample_size)
 
             if shuffle:
                 # shuffle data for p-value estimation
@@ -128,8 +139,9 @@ class ConditionalIndependenceTest(HypothesisTest):
                 shuffle_stat = self.compute_statistic(self.x_data[idx1],
                                                       self.y_data[idx2],
                                                       self.z_data[idx1])
+
             else:
-                # no shuffling, bootstrap subsample
+                # no shuffling, subsample subsample
                 nominal_stat = self.compute_statistic(self.x_data[idx1],
                                                       self.y_data[idx1],
                                                       self.z_data[idx1])
@@ -142,7 +154,7 @@ class ConditionalIndependenceTest(HypothesisTest):
             shuffle_stat = self.compute_statistic(self.x_data, self.y_data[idx], self.z_data)
 
         else:
-            # No bootstrapping, no shuffling. Only compute nominal test statistic
+            # No subsampleping, no shuffling. Only compute nominal test statistic
             nominal_stat = self.compute_statistic(self.x_data, self.y_data, self.z_data)
             shuffle_stat = None
 

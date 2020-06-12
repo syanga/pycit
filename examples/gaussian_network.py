@@ -1,6 +1,6 @@
 """ Generate gaussian data from a particular DAG """
-import numpy as np
 import os
+import numpy as np
 
 
 def gaussian_network(num_samples, dim, std=1.0):
