@@ -51,7 +51,7 @@ if __name__ == "__main__":
     K_KNN = 5
     K_PERM = 10
     SUBSAMPLE_SIZE = None
-    N_TRIALS = 200
+    N_TRIALS = 500
     N_JOBS = 10
 
     cit_funcs = {

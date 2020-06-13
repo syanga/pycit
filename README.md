@@ -21,7 +21,7 @@ Note: Also includes a differential entropy estimator: ```kl_entropy```.
 from pycit import itest
 
 # Test whether or not x and y are independent
-pval = itest(x, y, test_args={'n_jobs': 2})
+pval = itest(x, y)
 is_independent = (pval >= 1.- confidence_level)
 ```
 
@@ -30,13 +30,17 @@ is_independent = (pval >= 1.- confidence_level)
 from pycit import citest
 
 # Test whether or not x and y are conditionally independent given z
-pval = citest(x_data, y_data, z_data, test_args={'n_jobs': 2})
+pval = citest(x_data, y_data, z_data)
 is_conditionally_independent = (pval >= 1.- confidence_level)
 ```
 
 ### Markov Blanket Feature Selection
 ```python
 from pycit.markov_blanket import MarkovBlanket
+
+# find Markov blanket of Y. x_data contains data from predictor variables, X_1,...,X_m
+mb = MarkovBlanket(x_data, y_data)
+markov_blanket = mb.find_markov_blanket()
 ```
 
 # Dependencies:
