@@ -20,7 +20,7 @@ def mixed_mi(x_data, y_data, k=5):
     x_y = np.concatenate((x_data.reshape(-1, 1) if x_data.ndim == 1 else x_data,
                           y_data.reshape(-1, 1) if y_data.ndim == 1 else y_data), axis=1)
 
-    lookup = NearestNeighbors(metric='chebyshev', algorithm='auto')
+    lookup = NearestNeighbors(metric='chebyshev')
     lookup.fit(x_y)
 
     # compute k-NN distances

@@ -17,7 +17,7 @@ def ksg_mi(x_data, y_data, k=5):
     assert x_data.shape[0] == y_data.shape[0]
     num_samples = x_data.shape[0]
 
-    lookup = NearestNeighbors(metric='chebyshev', algorithm='auto')
+    lookup = NearestNeighbors(metric='chebyshev')
     lookup.fit(np.concatenate((x_data.reshape(-1, 1) if x_data.ndim == 1 else x_data,
                                y_data.reshape(-1, 1) if y_data.ndim == 1 else y_data), axis=1))
 
