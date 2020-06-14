@@ -1,6 +1,11 @@
 # pycit
 Framework for independence testing and conditional independence testing, with multiprocessing. Currently uses mutual information (MI) and conditional mutual information (CMI) as test statistics, estimated using k-NN methods. Also supports a routine for Markov blanket feature selection. Reports permutation-based p-values.
 
+# Installation
+```python
+pip install pycit
+```
+
 # Available Test Statistic Estimators
 ### Mutual Information Estimators
 * ```ksg_mi```: k-NN estimator for continuous data
