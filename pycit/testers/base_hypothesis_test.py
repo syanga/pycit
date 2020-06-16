@@ -3,7 +3,7 @@
     Tracks test statistics, computes p-values.
     Supports resampling data at each run.
 """
-from multiprocessing import Pool
+from multiprocessing import set_start_method, get_context
 from functools import partial
 import os
 import numpy as np
@@ -43,12 +43,18 @@ class HypothesisTest:
                 * self.subsample_nominal_statistics
         """
         if n_jobs > 1:
-            pool = Pool(processes=n_jobs)
-            results = list(pool.map_async(partial( \
-                HypothesisTest.subsample_trial, hypothesis_test=self, \
-                subsample_size=subsample_size), range(n_trials)).get())
-            pool.close()
-            pool.join()
+            # resolve potential multiprocessing issues
+            try:
+                set_start_method("spawn")
+            except RuntimeError:
+                pass
+
+            with get_context("spawn").Pool(processes=n_jobs) as pool:
+                results = list(pool.map_async(partial( \
+                    HypothesisTest.subsample_trial, hypothesis_test=self, \
+                    subsample_size=subsample_size), range(n_trials)).get())
+                pool.close()
+                pool.join()
         else:
             results = list(map(partial( \
                 HypothesisTest.subsample_trial, hypothesis_test=self, \

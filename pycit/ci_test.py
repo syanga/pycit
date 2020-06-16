@@ -21,7 +21,7 @@ def citest(x_data, y_data, z_data, statistic="mixed_cmi", statistic_args=None, t
         test_args: dictionary of additional args for cit
             default:
             {
-                'k_perm': 10,            # permutation nearest neigbhors
+                'k_perm': 10,           # permutation nearest neigbhors
                 'n_trials': 1000,       # number of trials for estimating p-value
                 'subsample_size': None, # not subsampleped dataset
                 'n_jobs': 1             # number of parallel processes for ci testing
@@ -52,6 +52,10 @@ def citest(x_data, y_data, z_data, statistic="mixed_cmi", statistic_args=None, t
 
     tester = ConditionalIndependenceTest(x_data, y_data, z_data, \
         getattr(estimators, statistic), statistic_args=statistic_args, k_perm=test_args['k_perm'])
+
+    # initialize z nearest neighbor search preemptively to avoid multiprocessing issues
+    if default_test_args['subsample_size'] is None:
+        tester.initialize_batch()
 
     pval = tester.test(test_args['n_trials'], \
         subsample_size=test_args['subsample_size'], n_jobs=test_args['n_jobs'])

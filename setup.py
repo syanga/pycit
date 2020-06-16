@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pycit",
-    version="0.0.5",
+    version="0.0.7",
     author="Alan Yang",
     author_email="ayang1097@gmail.com",
     description="Conditional independence testing and Markov blanket feature selection in Python",

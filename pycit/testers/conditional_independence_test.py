@@ -44,14 +44,14 @@ class ConditionalIndependenceTest(HypothesisTest):
         self.nn_lists = None
         self.batch_initialized = False
 
-    def _initialize_batch(self):
+    def initialize_batch(self):
         """
             Compute 2d array of nearest indices for each point in dataset
             Run this once before batch runs
         """
+        self.batch_initialized = True
         self.lookup_z.fit(self.z_data)
         self.nn_lists = self.lookup_z.kneighbors(n_neighbors=self.k_perm, return_distance=False)
-        self.batch_initialized = True
 
     def _batch_permute(self):
         """
@@ -60,7 +60,7 @@ class ConditionalIndependenceTest(HypothesisTest):
         """
         if not self.batch_initialized:
             # initialize nearest neighbor lists
-            self._initialize_batch()
+            self.initialize_batch()
 
         used_idx = set()
         idx = np.zeros(self.total_samples, dtype='i')
