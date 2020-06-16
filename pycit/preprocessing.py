@@ -11,7 +11,10 @@ def normalize(data):
     mini = np.min(data, axis=0)
     maxi = np.max(data, axis=0)
     den = maxi-mini
-    den[den == 0] = 1.
+    if data.ndim > 1:
+        den[den == 0] = 1.
+    elif den == 0:
+        den = 1.
 
     return (data-mini)/den
 
@@ -24,7 +27,11 @@ def standardize(data):
     """
     mean = np.mean(data, axis=0)
     stdv = np.std(data, axis=0)
-    stdv[stdv == 0] = 1.
+    if data.ndim > 1:
+        stdv[stdv == 0] = 1.
+    elif stdv == 0:
+        stdv = 1.
+
     return (data-mean)/stdv
 
 
